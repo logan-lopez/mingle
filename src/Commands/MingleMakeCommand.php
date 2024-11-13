@@ -23,7 +23,7 @@ class MingleMakeCommand extends GeneratorCommand
      *
      */
     protected $signature = 'make:mingle
-        {framework : The JavaScript framework to be used (react,vue)}
+        {framework : The JavaScript framework to be used (react,vue,svelte)}
         {name : The Mingle class name}
         {--jsfile= : The file path to the JS component, relative to `resources/js`}
         {--force : Create the class even if the mingle already exists}
@@ -206,12 +206,14 @@ class MingleMakeCommand extends GeneratorCommand
 
         if($path->endsWith('index.js')) {
             return match ($framework) {
+                'svelte' => $path->replace('index.js', "$basename.svelte"),
                 'vue' => $path->replace('index.js', "$basename.vue"),
                 'react' => $path->replace('index.js', "$basename.jsx"),
             };
         }
 
         return match ($framework) {
+            'svelte' => $path->replace('.js', '.svelte'),
             'vue' => $path->replace('.js', '.vue'),
             'react' => $path->replace('.js', '.jsx'),
         };
@@ -224,6 +226,10 @@ class MingleMakeCommand extends GeneratorCommand
     protected function generateNewComponentContents($framework, $path, $basename): string
     {
         return match ($framework) {
+
+            'svelte' => str(
+                $this->files->get(__DIR__ . '/../../resources/stubs/mingle.svelte-component.stub')
+            )->replace('{{ $basename }}', $basename),
 
             'vue' => str(
                 $this->files->get(__DIR__ . '/../../resources/stubs/mingle.vue-component.stub')
@@ -246,10 +252,12 @@ class MingleMakeCommand extends GeneratorCommand
             '{{ $basename }}' => $basename,
             '{{ $path }}' => $path,
             '{{ $componentFile }}' => match ($framework) {
+                'svelte' => $basename . '.svelte',
                 'vue' => $basename . '.vue',
                 'react' => $basename . '.jsx',
             },
             '{{ $mingleFrameworkImport }}' => match ($framework) {
+                'svelte' => '@mingle/mingleSvelte',
                 'vue' => '@mingle/mingleVue',
                 'react' => '@mingle/mingleReact',
             },
@@ -310,6 +318,7 @@ class MingleMakeCommand extends GeneratorCommand
             'framework' => fn() => select(
                 label: 'Which JavaScript framework do you want to use?',
                 options: [
+                    'svelte' => 'Svelte',
                     'vue' => 'Vue',
                     'react' => 'React',
                 ],
