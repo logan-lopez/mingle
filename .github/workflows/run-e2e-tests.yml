@@ -2,6 +2,7 @@ name: Run E2E Tests
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   test-e2e:
@@ -22,18 +23,18 @@ jobs:
           ./run prepare:container
           touch wrapper-mingle/database/database.sqlite
           docker compose run --rm webapp php artisan migrate:fresh --seed --force
-          cd wrapper-mingle ; npm ci ; npm run build ; cd -
+
+          docker compose run --rm webapp bash -c "npm ci ; npm run build"
           ./run ci:server
+
           npm ci
           npx playwright install --with-deps
-          # Build JS
           # Wait for the webserver to be ready
-          curl http://localhost:8080
           npx wait-on http://localhost:8080 -t 15s
+          # curl http://localhost:8080
           npm run test
 
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: playwright-report
           path: playwright-report/
